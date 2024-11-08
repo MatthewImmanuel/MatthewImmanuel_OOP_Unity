@@ -12,14 +12,22 @@ public class PlayerMovement : MonoBehaviour
     private Vector2 moveFriction;
     private Vector2 stopFriction;
     private Rigidbody2D rb;
+    private Camera mainCamera;
 
     private void Start()
     {
         rb = GetComponent<Rigidbody2D>();
         rb.gravityScale = 0;
+        mainCamera = Camera.main;
         moveVelocity = 2 * maxSpeed / timeToFullSpeed;
         moveFriction = -2 * maxSpeed / (timeToFullSpeed * timeToFullSpeed);
         stopFriction = -2 * maxSpeed / (timeToStop * timeToStop);
+    }
+
+    private void Update()
+    {
+        Move();
+        ConstrainWithinCameraBounds();
     }
 
     public void Move()
@@ -40,6 +48,17 @@ public class PlayerMovement : MonoBehaviour
         {
             rb.velocity = Vector2.zero;
         }
+    }
+
+    private void ConstrainWithinCameraBounds()
+    {
+        Vector3 position = transform.position;
+        Vector3 viewportPosition = mainCamera.WorldToViewportPoint(position);
+
+        viewportPosition.x = Mathf.Clamp(viewportPosition.x, 0f, 1f);
+        viewportPosition.y = Mathf.Clamp(viewportPosition.y, 0f, 1f);
+
+        transform.position = mainCamera.ViewportToWorldPoint(viewportPosition);
     }
 
     public Vector2 GetFriction()
