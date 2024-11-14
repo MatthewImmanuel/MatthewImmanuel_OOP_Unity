@@ -1,30 +1,34 @@
-using UnityEngine;
 using System.Collections;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 
+// Singleton
 public class LevelManager : MonoBehaviour
 {
-    [SerializeField] private Animator animator; // Menambahkan animator sesuai diagram
+    [SerializeField] Animator animator;
 
     void Awake()
     {
-        // Lakukan sesuatu di Awake, misalnya mengatur animator atau objek lainnya
-        animator.enabled = false; // Contoh untuk menyembunyikan animasi
+        animator.enabled = false;
     }
 
     IEnumerator LoadSceneAsync(string sceneName)
     {
-        animator.SetTrigger("FadeOut"); // Memicu transisi sebelum memuat scene
-        yield return new WaitForSeconds(1); // Menunggu transisi selesai
+        animator.enabled = true;
 
-        SceneManager.LoadSceneAsync(sceneName); // Memuat scene baru
+        // animator.SetTrigger("startTransition");
 
-        // Menyetel posisi pemain setelah scene dimuat
-        Player.Instance.transform.position = new Vector3(0, -4.5f, 0);
+        yield return new WaitForSeconds(1);
+
+        SceneManager.LoadSceneAsync(sceneName);
+
+        animator.SetTrigger("endTransition");
+
+        Player.Instance.transform.position = new(0, -4.5f);
     }
 
     public void LoadScene(string sceneName)
     {
-        StartCoroutine(LoadSceneAsync(sceneName)); 
+        StartCoroutine(LoadSceneAsync(sceneName));
     }
 }
