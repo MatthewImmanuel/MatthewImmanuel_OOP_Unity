@@ -3,27 +3,28 @@ using UnityEngine;
 [RequireComponent(typeof(Collider2D))]
 public class AttackComponent : MonoBehaviour
 {
-    [SerializeField] private Bullet bullet;
-    [SerializeField] private int damage = 10;
+    public Bullet bullet;
+    public int damage;
 
     private void OnTriggerEnter2D(Collider2D other)
     {
-        // Cek apakah objek yang bertabrakan memiliki tag yang sama
-        if (other.CompareTag(gameObject.tag)) return;
+        if (other.gameObject.CompareTag(gameObject.tag)) return;
 
-        // Cek apakah objek yang bertabrakan memiliki HitboxComponent
-        HitboxComponent hitbox = other.GetComponent<HitboxComponent>();
-        if (hitbox != null)
+        if (other.GetComponent<HitboxComponent>() != null)
         {
-            // Cek apakah objek memiliki InvincibilityComponent
-            InvincibilityComponent invincibility = other.GetComponent<InvincibilityComponent>();
-            if (invincibility != null)
+            HitboxComponent hitbox = other.GetComponent<HitboxComponent>();
+
+            if (bullet != null)
             {
-                invincibility.TriggerInvincibility(); // Aktifkan efek invincibility
+                hitbox.Damage(bullet.damage);
             }
 
-            // Berikan damage sesuai dengan damage yang ditetapkan
             hitbox.Damage(damage);
+        }
+
+        if (other.GetComponent<InvincibilityComponent>() != null)
+        {
+            other.GetComponent<InvincibilityComponent>().TriggerInvincibility();
         }
     }
 }

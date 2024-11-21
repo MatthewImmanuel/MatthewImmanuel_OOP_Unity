@@ -1,16 +1,17 @@
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class HealthComponent : MonoBehaviour
 {
-    [SerializeField] private int maxHealth = 100;
+    public int maxHealth = 10;
+
     private int health;
 
-    private void Start()
+    void Awake()
     {
-        health = maxHealth; // Inisialisasi health
+        health = maxHealth;
     }
-
-    public int Health => health; // Getter untuk health
 
     public void Subtract(int amount)
     {
@@ -18,7 +19,12 @@ public class HealthComponent : MonoBehaviour
 
         if (health <= 0)
         {
-            Destroy(gameObject); // Hapus Entity jika health di bawah 0
+            Destroy(gameObject);
         }
+    }
+
+    public int GetHealth()
+    {
+        return health;
     }
 }

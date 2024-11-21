@@ -1,26 +1,66 @@
 using UnityEngine;
 
-public class EnemyTargeting : Enemy
+public class EnemyTargetting : Enemy
 {
-    public float speed = 3f; // Kecepatan Enemy
-    private Transform player; // Referensi ke objek Player
+    public float speed = 2f;
 
-    protected override void Start()
+    private Transform player;
+    Rigidbody2D rb;
+
+    void Start()
     {
-        base.Start();
-        player = GameObject.FindWithTag("Player").transform; // Asumsikan Player ada dengan tag "Player"
+        player = GameObject.FindGameObjectWithTag("Player").transform;
+        rb = GetComponent<Rigidbody2D>();
     }
 
-    protected override void Update()
+    private void Awake()
     {
-        base.Update();
-        Vector2 direction = (player.position - transform.position).normalized; // Menghitung arah menuju Player
-        rb.velocity = direction * speed; // Bergerak ke arah Player
+        PickRandomPositions();
+    }
 
-        // Jika bersentuhan dengan Player, Enemy mati
-        if (Vector2.Distance(transform.position, player.position) < 0.5f)
+    void FixedUpdate()
+    {
+        if (player != null)
         {
-            Destroy(gameObject); // Hapus Enemy
+            Vector2 direction = (player.position - transform.position).normalized;
+            float angle = Mathf.Atan2(direction.y, direction.x);
+
+            rb.rotation = angle;
+            rb.velocity = speed * Time.deltaTime * direction;
         }
+    }
+
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+        if (other.gameObject.CompareTag("Player"))
+        {
+            Destroy(gameObject);
+        }
+    }
+
+    private void PickRandomPositions()
+    {
+        Vector2 randPos;
+        Vector2 dir;
+
+        if (Random.Range(-1, 1) >= 0)
+        {
+            dir = Vector2.right;
+        }
+        else
+        {
+            dir = Vector2.left;
+        }
+
+        if (dir == Vector2.right)
+        {
+            randPos = new(1.1f, Random.Range(0.1f, 0.95f));
+        }
+        else
+        {
+            randPos = new(-0.01f, Random.Range(0.1f, 0.95f));
+        }
+
+        transform.position = Camera.main.ViewportToWorldPoint(randPos) + new Vector3(0, 0, 10);
     }
 }

@@ -1,71 +1,81 @@
+using System.Collections;
 using UnityEngine;
+using UnityEngine.Assertions;
 using UnityEngine.Pool;
 
 public class Weapon : MonoBehaviour
 {
     [Header("Weapon Stats")]
-    [SerializeField] private float shootIntervalInSeconds = 1f; // Interval waktu antar tembakan diubah menjadi 1 detik
+    [SerializeField] private float shootIntervalInSeconds = 3f;
+
 
     [Header("Bullets")]
-    public Bullet bulletPrefab; // Prefab Bullet yang akan ditembakkan
-    [SerializeField] private Transform bulletSpawnPoint; // Titik spawn Bullet
+    public Bullet bullet;
+    [SerializeField] private Transform bulletSpawnPoint;
+
 
     [Header("Bullet Pool")]
-    private ObjectPool<Bullet> bulletPool; // Object Pool untuk Bullet
-    private float timer; // Timer untuk interval penembakan
+    private IObjectPool<Bullet> objectPool;
 
-    private void Start()
+    private readonly bool collectionCheck = false;
+    private readonly int defaultCapacity = 30;
+    private readonly int maxSize = 100;
+
+
+    private float timer;
+
+
+    public Transform parentTransform;
+
+
+    private void Awake()
     {
-        // Setup Object Pool
-        bulletPool = new ObjectPool<Bullet>(CreateBullet, OnGetBullet, OnReleaseBullet, OnDestroyBullet, false, 30, 100);
+        Assert.IsNotNull(bulletSpawnPoint);
+
+        objectPool = new ObjectPool<Bullet>(CreateBullet, OnGetFromPool, OnReleaseToPool, OnDestroyPooledObject, collectionCheck, defaultCapacity, maxSize);
     }
 
-    private void Update()
+
+    private void Shoot()
     {
-        HandleAutomaticShooting();
+        Bullet bulletObj = objectPool.Get();
+
+        bulletObj.transform.SetPositionAndRotation(bulletSpawnPoint.position, bulletSpawnPoint.rotation);
     }
 
-    // Penembakan otomatis dengan interval 1 detik
-    private void HandleAutomaticShooting()
+
+    private void FixedUpdate()
     {
         timer += Time.deltaTime;
 
         if (timer >= shootIntervalInSeconds)
         {
-            Fire();
-            timer = 0f;
+            timer = 0;
+            Shoot();
         }
-    }
-
-    private void Fire()
-    {
-        if (bulletPrefab == null || bulletSpawnPoint == null) return;
-        Bullet bullet = bulletPool.Get(); // Ambil Bullet dari Pool
-        bullet.transform.position = bulletSpawnPoint.position;
-        bullet.transform.rotation = bulletSpawnPoint.rotation;
-        bullet.gameObject.SetActive(true);
     }
 
     private Bullet CreateBullet()
     {
-        Bullet newBullet = Instantiate(bulletPrefab);
-        newBullet.gameObject.SetActive(false);
-        return newBullet;
+        Bullet instance = Instantiate(bullet);
+        instance.objectPool = objectPool;
+        instance.transform.parent = transform;
+
+        return instance;
     }
 
-    private void OnGetBullet(Bullet bullet)
+    private void OnGetFromPool(Bullet obj)
     {
-        bullet.transform.position = bulletSpawnPoint.position;
-        bullet.transform.rotation = bulletSpawnPoint.rotation;
+        obj.gameObject.SetActive(true);
     }
 
-    private void OnReleaseBullet(Bullet bullet)
+    private void OnReleaseToPool(Bullet obj)
     {
-        bullet.gameObject.SetActive(false);
+        obj.gameObject.SetActive(false);
     }
 
-    private void OnDestroyBullet(Bullet bullet)
+    private void OnDestroyPooledObject(Bullet obj)
     {
-        Destroy(bullet.gameObject);
+        Destroy(obj.gameObject);
     }
 }

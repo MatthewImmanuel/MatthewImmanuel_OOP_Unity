@@ -1,20 +1,29 @@
 using UnityEngine;
+using UnityEngine.Events;
 
 public class Enemy : MonoBehaviour
 {
-    public int level; // Level dari Enemy
-    protected Rigidbody2D rb; // Rigidbody untuk pengaturan fisika
+  [SerializeField] protected int level;
 
-    // Ini adalah method untuk menginisialisasi komponen
-    protected virtual void Start()
-    {
-        rb = GetComponent<Rigidbody2D>();
-        rb.gravityScale = 0; // Agar tidak terpengaruh gravitasi
-    }
+  public UnityEvent enemyKilledEvent;
 
-    // Update bisa diimplementasikan jika diperlukan
-    protected virtual void Update()
-    {
-        // Umum untuk semua Enemy
-    }
+  private void Start()
+  {
+    enemyKilledEvent ??= new UnityEvent();
+  }
+
+  public void SetLevel(int level)
+  {
+    this.level = level;
+  }
+
+  public int GetLevel()
+  {
+    return level;
+  }
+
+  private void OnDestroy()
+  {
+    enemyKilledEvent.Invoke();
+  }
 }

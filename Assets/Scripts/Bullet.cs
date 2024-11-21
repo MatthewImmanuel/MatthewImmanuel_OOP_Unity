@@ -1,54 +1,44 @@
+using System;
 using UnityEngine;
+using UnityEngine.Assertions;
+using UnityEngine.Pool;
 
 public class Bullet : MonoBehaviour
 {
     [Header("Bullet Stats")]
-    public float bulletSpeed = 20f;
+    public float bulletSpeed = 20;
     public int damage = 10;
+
     private Rigidbody2D rb;
-    private float lifetime = 5f; // Waktu hidup maksimum peluru dalam detik
-    private float lifeTimer; // Timer untuk melacak waktu hidup
+
+    public IObjectPool<Bullet> objectPool;
 
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
-        if (rb == null)
-        {
-            Debug.LogError("Rigidbody2D is missing on Bullet prefab.");
-        }
     }
 
-    private void OnEnable()
+    private void FixedUpdate()
     {
-        if (rb != null)
-        {
-            rb.velocity = transform.up * bulletSpeed;
-        }
-        lifeTimer = 0f; // Reset timer setiap kali Bullet diaktifkan
+        rb.velocity = bulletSpeed * Time.deltaTime * transform.up;
     }
 
     private void Update()
     {
-        // Perbarui timer hidup
-        lifeTimer += Time.deltaTime;
-        if (lifeTimer >= lifetime)
+        Vector2 ppos = Camera.main.WorldToViewportPoint(transform.position);
+
+        if (ppos.y >= 1.01f || ppos.y <= -0.01f && objectPool != null)
         {
-            ReturnToPool();
+            objectPool.Release(this);
         }
     }
 
-    private void OnCollisionEnter2D(Collision2D collision)
+    private void OnTriggerEnter2D(Collider2D other)
     {
-        // Jika bertabrakan dengan objek lain, kembalikan ke pool
-        ReturnToPool();
-    }
-
-    private void ReturnToPool()
-    {
-        if (rb != null)
+        if (other.gameObject.CompareTag("Enemy"))
         {
-            rb.velocity = Vector2.zero;
+            other.gameObject.GetComponent<HitboxComponent>().Damage(this);
+            objectPool.Release(this);
         }
-        gameObject.SetActive(false); // Nonaktifkan Bullet
     }
 }
