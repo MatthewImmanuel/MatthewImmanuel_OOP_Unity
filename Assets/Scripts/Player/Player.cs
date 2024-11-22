@@ -1,40 +1,47 @@
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class Player : MonoBehaviour
-{
+{ 
     public static Player Instance { get; private set; }
-    public PlayerMovement playerMovement;
-    public Animator animator;
+    PlayerMovement playerMovement;
+    Animator animator;
 
-    private void Awake()
+    void Awake()
     {
-        if (Instance == null)
+        if (Instance != null && Instance != this)
         {
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
+            Destroy(this);
         }
         else
         {
-            Destroy(gameObject);
+            Instance = this;
+            DontDestroyOnLoad(this);
         }
     }
 
-    private void Start()
+    // Start is called before the first frame update
+    void Start()
     {
         playerMovement = GetComponent<PlayerMovement>();
-        animator = GameObject.Find("EngineEffect")?.GetComponent<Animator>();
+        animator = GameObject.Find("EngineEffect").GetComponent<Animator>();
+    }
+    void FixedUpdate()
+    {
+        playerMovement.Move();
     }
 
-    private void FixedUpdate()
+    void LateUpdate()
     {
-        playerMovement?.Move();
-    }
-
-    private void LateUpdate()
-    {
-        if (animator != null && playerMovement != null)
+        if (animator != null)
         {
-            animator.SetBool("IsMoving", playerMovement.IsMoving());
+            bool isMoving = playerMovement.IsMoving();
+            animator.SetBool("IsMoving", isMoving);
+        }
+        else
+        {
+            Debug.LogError("Animator is null!"); // Log jika animator null        
         }
     }
 }

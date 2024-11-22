@@ -1,77 +1,93 @@
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class PlayerMovement : MonoBehaviour
 {
-    [SerializeField] private Vector2 maxSpeed = new Vector2(7f, 5f);
-    [SerializeField] private Vector2 timeToFullSpeed = new Vector2(1f, 1f);
-    [SerializeField] private Vector2 timeToStop = new Vector2(0.5f, 0.5f);
-    [SerializeField] private Vector2 stopClamp = new Vector2(2.5f, 2.5f);
+    
+    [SerializeField] Vector2 maxSpeed;
+    [SerializeField] Vector2 timeToFullSpeed;
+    [SerializeField] Vector2 timeToStop;
+    [SerializeField] Vector2 stopClamp;
 
-    private Vector2 moveDirection;
-    private Vector2 moveVelocity;
-    private Vector2 moveFriction;
-    private Vector2 stopFriction;
-    private Rigidbody2D rb;
-    private Camera mainCamera;
-
-    private void Start()
+    Vector2 moveDirection;
+    Vector2 moveVelocity;
+    Vector2 moveFriction;
+    Vector2 stopFriction;
+    Rigidbody2D rb;
+    // Start is called before the first frame update
+    void Start()
     {
         rb = GetComponent<Rigidbody2D>();
-        rb.gravityScale = 0;
-        mainCamera = Camera.main;
-        moveVelocity = 2 * maxSpeed / timeToFullSpeed;
-        moveFriction = -2 * maxSpeed / (timeToFullSpeed * timeToFullSpeed);
-        stopFriction = -2 * maxSpeed / (timeToStop * timeToStop);
-    }
 
-    private void Update()
-    {
-        Move();
-        ConstrainWithinCameraBounds();
+        moveVelocity = Vector2.zero;
+
+        moveVelocity = 2 * maxSpeed / timeToFullSpeed;
+        moveFriction = -2 * maxSpeed / (timeToFullSpeed)*(timeToFullSpeed);
+        stopFriction = -2 * maxSpeed / (timeToStop)*(timeToStop);
     }
 
     public void Move()
     {
-        float horizontal = Input.GetAxis("Horizontal");
-        float vertical = Input.GetAxis("Vertical");
-        moveDirection = new Vector2(horizontal, vertical).normalized;
+        moveDirection = new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical")).normalized;
 
         if (moveDirection != Vector2.zero)
         {
             Vector2 targetVelocity = moveDirection * maxSpeed;
-            Vector2 newVelocity = Vector2.Lerp(rb.velocity, targetVelocity, Time.deltaTime / timeToFullSpeed.x);
-            newVelocity.x = Mathf.Clamp(newVelocity.x, -maxSpeed.x, maxSpeed.x);
-            newVelocity.y = Mathf.Clamp(newVelocity.y, -maxSpeed.y, maxSpeed.y);
-            rb.velocity = newVelocity;
+            rb.velocity = Vector2.MoveTowards(rb.velocity, targetVelocity, moveVelocity.magnitude * Time.deltaTime);
         }
         else
         {
-            rb.velocity = Vector2.zero;
+            Vector2 frictionForce = GetFriction();
+            rb.velocity = Vector2.MoveTowards(rb.velocity, Vector2.zero, frictionForce.magnitude * Time.deltaTime);
+
+            if (rb.velocity.magnitude < stopClamp.magnitude)
+            {
+                rb.velocity = Vector2.zero;
+            }
+        }
+
+        rb.velocity = new Vector2(
+            Mathf.Clamp(rb.velocity.x, -maxSpeed.x, maxSpeed.x),
+            Mathf.Clamp(rb.velocity.y, -maxSpeed.y, maxSpeed.y)
+        );
+
+        MoveBound();
+    }
+
+
+    Vector2 GetFriction()
+    {
+        if (IsMoving())
+        {
+            return moveFriction;
+        }
+        else
+        {
+            return stopFriction;
         }
     }
 
-    private void ConstrainWithinCameraBounds()
-    {
-        Vector3 position = transform.position;
-        Vector3 viewportPosition = mainCamera.WorldToViewportPoint(position);
 
-        viewportPosition.x = Mathf.Clamp(viewportPosition.x, 0f, 1f);
-        viewportPosition.y = Mathf.Clamp(viewportPosition.y, 0f, 1f);
+    void MoveBound()
+    {   
+    // Dapatkan ukuran batas layar dari kamera
+    Vector3 screenBottomLeft = Camera.main.ViewportToWorldPoint(new Vector3(0, 0, 0));
+    Vector3 screenTopRight = Camera.main.ViewportToWorldPoint(new Vector3(1, 1, 0));
 
-        transform.position = mainCamera.ViewportToWorldPoint(viewportPosition);
-    }
+    // Ambil posisi pesawat saat ini
+    Vector3 currentPosition = rb.position;
 
-    public Vector2 GetFriction()
-    {
-        return moveDirection.magnitude > 0 ? moveFriction : stopFriction;
-    }
+    // Clamp posisi pesawat agar tetap dalam batasan x dari -8.5 ke 8.5 dan y maksimum 4.5
+    currentPosition.x = Mathf.Clamp(currentPosition.x, -8.65f, 8.65f);
+    currentPosition.y = Mathf.Clamp(currentPosition.y, -5f, 4.5f);
 
-    public void MoveBound()
-    {
+    // Set posisi pesawat yang telah di-clamp
+    rb.position = currentPosition;
     }
 
     public bool IsMoving()
     {
-        return rb.velocity.magnitude > 0.1f;
+        return rb.velocity.magnitude > 0.01f;
     }
 }
